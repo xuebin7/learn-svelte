@@ -1,11 +1,13 @@
+import type { Detail, Item } from "./LoanResult"
+
 /**
  * 等额本息 每月本金与利息之和相同，利息减少，本金增加
  * @param {number} P 初始本金
  * @param {number} N 还款期限
  * @param {number} R 月利率
  */
-export function calculateDebx(P: number, N: number, R: number) {
-    const loanDetails = []
+export function calculateDebx(P: number, N: number, R: number): Detail {
+    const loanDetails: Item[] = []
     // 总利息
     let totalInterest = 0
     // 每月还款额 = P * R * (1+R)^N / ((1+R)^N - 1)
@@ -42,7 +44,7 @@ export function calculateDebx(P: number, N: number, R: number) {
    * @param {number} N 还款期限
    * @param {number} R 月利率
    */
-  export function calculateDebj(P: number, N: number, R: number) {
+  export function calculateDebj(P: number, N: number, R: number): Detail {
     const loanDetails = []
     // 总利息
     let totalInterest = 0

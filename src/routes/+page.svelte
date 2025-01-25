@@ -1,63 +1,37 @@
 <script lang="ts">
 	import { calculateDebx, calculateDebj } from '$lib/algorithm.svelte';
+	import type { Item, LoanResult } from '$lib/LoanResult';
 
-	// const P = document.getElementById('P');
-	// const yearsSelect = document.getElementById('years-select');
-	// const months = document.getElementById('months');
-	// const rateOfInterest = document.getElementById('rateOfInterest');
-	// const totalInterest = document.getElementById('totalInterest');
-	// let debxTotalInterestValue = '0.00';
-	// let debjTotalInterestValue = '0.00';
+	let pValue = $state(100);
+	let monthsValue = $state(360);
+	let rateOfInterestValue = $state(5.39);
 
-	// const debxBlock = document.getElementById('debxBlock');
-	// const debxTable = document.getElementById('debxTable');
+	/**
+	 * 获取贷款利息
+	 */
+	function calculateLoanResult() {
+		// P 本金(万元), months 还款期数, rateOfInterest 年利率(%)
+		if (!pValue) {
+			alert('请填写本金');
+			return;
+		}
+		if (!monthsValue) {
+			alert('请填写期数');
+			return;
+		}
+		if (!rateOfInterestValue) {
+			alert('请填写年利率');
+			return;
+		}
+		const PValue = pValue * 10000,
+			tmpMonthsValue = monthsValue,
+			tmpRateOfInterestValue = rateOfInterestValue * 0.01;
+		let loanResult = loanCalculate(PValue, tmpMonthsValue, tmpRateOfInterestValue);
+		setTableValue({ debjResult: loanResult.debjResult, debxResult: loanResult.debxResult });
 
-	// const debjBlock = document.getElementById('debjBlock');
-	// const debjTable = document.getElementById('debjTable');
-
-	// initYearSelect();
-
-	// // 默认显示等额本息
-	// // debxLabelClick()
-
-	// yearsSelect.addEventListener('change', yearsSelectChange);
-
-	// /**
-	//  * 获取贷款利息
-	//  */
-	function calculateLoanResult() {}
-	// function calculateLoanResult() {
-	// 	const headerHtml = `<th>期数</th>
-	//                 <th>月还款额</th>
-	//                 <th>每月本金</th>
-	//                 <th>每月利息</th>
-	//                 <th>剩余本金</th>`;
-	// 	// 清空之前的数据
-	// 	debxTable.innerHTML = headerHtml;
-	// 	debjTable.innerHTML = headerHtml;
-
-	// 	// P 本金(万元), months 还款期数, rateOfInterest 年利率(%)
-	// 	if (!P.value) {
-	// 		alert('请填写本金');
-	// 		return;
-	// 	}
-	// 	if (!months.value) {
-	// 		alert('请填写期数');
-	// 		return;
-	// 	}
-	// 	if (!rateOfInterest.value) {
-	// 		alert('请填写年利率');
-	// 		return;
-	// 	}
-	// 	const PValue = P.value * 10000,
-	// 		monthsValue = months.value,
-	// 		rateOfInterestValue = rateOfInterest.value * 0.01;
-	// 	let loanResult = loanCalculate(PValue, monthsValue, rateOfInterestValue);
-	// 	setTableValue({ debj: loanResult['debjResult'], debx: loanResult['debxResult'] });
-
-	// 	// 点击计算按钮时，默认显示等额本息内容
-	// 	debxLabelClick();
-	// }
+		// 点击计算按钮时，默认显示等额本息内容
+		debxLabelClick();
+	}
 
 	/**
 	 * 初始化年限下拉框
@@ -95,43 +69,46 @@
 		{ id: 29, label: '29' },
 		{ id: 30, label: '30' }
 	];
-	let selectedYear = $state();
+	let selectedYear: number | undefined = $state();
 
-	// /**
-	//  * 填充表格数据
-	//  * @param {Object} data 数据
-	//  */
-	// function setTableValue(data) {
-	// 	const debj = data['debj'];
-	// 	debjTotalInterestValue = debj.totalInterest;
-	// 	totalInterest.innerText = debjTotalInterestValue;
-	// 	debjTable.innerHTML += getTrHtml(debj.details);
+	let debxTotalInterestValue: string = $state('');
+	let debjTotalInterestValue: string = $state('');
+	let totalInterestValue: string = $state('');
+	let debxDetails: Item[] = $state([]);
+	let debjDetails: Item[] = $state([]);
+	/**
+	 * 填充表格数据
+	 * @param {LoanResult} data 数据
+	 */
+	function setTableValue(data: LoanResult) {
+		const debj = data.debjResult;
+		debjTotalInterestValue = debj.totalInterest;
+		debjDetails = debj.details;
 
-	// 	const debx = data['debx'];
-	// 	debxTotalInterestValue = debx.totalInterest;
-	// 	totalInterest.innerText = debxTotalInterestValue;
-	// 	debxTable.innerHTML += getTrHtml(debx.details);
-	// }
+		const debx = data.debxResult;
+		debxTotalInterestValue = debx.totalInterest;
+		debxDetails = debx.details;
+	}
 
-	// /**
-	//  * 构造表格行Html
-	//  * @param {Object} details 详情
-	//  * @returns 表格行Html
-	//  */
-	// function getTrHtml(details) {
-	// 	return details
-	// 		.map(
-	// 			(item) =>
-	// 				`<tr>
-	//   <td>${item.n}</td>
-	//   <td>${item.monthTotal}</td>
-	//   <td>${item.monthMoney}</td>
-	//   <td>${item.monthInterest}</td>
-	//   <td>${item.restMoney}</td>
-	// </tr>`
-	// 		)
-	// 		.join('');
-	// }
+	/**
+	 * 构造表格行Html
+	 * @param {Object} details 详情
+	 * @returns 表格行Html
+	 */
+	function getTrHtml(details: Item[]): string {
+		return details
+			.map(
+				(item) =>
+					`<tr>
+            <td>${item.n}</td>
+            <td>${item.monthTotal}</td>
+            <td>${item.monthMoney}</td>
+            <td>${item.monthInterest}</td>
+            <td>${item.restMoney}</td>
+            </tr>`
+			)
+			.join('');
+	}
 
 	let monthsDisabled = $state(false);
 	/**
@@ -141,32 +118,33 @@
 		console.log(selectedYear);
 		if (selectedYear === 0) {
 			monthsDisabled = false;
-			// months.value = '';
+			monthsValue = 0;
 		} else {
 			monthsDisabled = true;
-			// months.value = selectedIntYear * 12;
+			monthsValue = selectedYear === undefined ? 0 : selectedYear * 12;
 		}
 	};
 
-	// /**
-	//  * 点击等额本息时，显示等额本息，隐藏等额本金
-	//  */
-	function debxLabelClick() {}
-	// function debxLabelClick() {
-	// 	debxBlock.className = 'areaDisplay';
-	// 	debjBlock.className = 'areaHide';
-	// 	totalInterest.innerText = debxTotalInterestValue;
-	// }
+	let debxBlockDisplay: boolean = $state(true);
+	let debjBlockDisplay: boolean = $state(false);
 
-	// /**
-	//  * 点击等额本金时，显示等额本金，隐藏等额本息
-	//  */
-	function debjLabelClick() {}
-	// function debjLabelClick() {
-	// 	debjBlock.className = 'areaDisplay';
-	// 	debxBlock.className = 'areaHide';
-	// 	totalInterest.innerText = debjTotalInterestValue;
-	// }
+	/**
+	 * 点击等额本息时，显示等额本息，隐藏等额本金
+	 */
+	function debxLabelClick() {
+		debxBlockDisplay = true;
+		debjBlockDisplay = false;
+		totalInterestValue = debxTotalInterestValue;
+	}
+
+	/**
+	 * 点击等额本金时，显示等额本金，隐藏等额本息
+	 */
+	function debjLabelClick() {
+		debxBlockDisplay = false;
+		debjBlockDisplay = true;
+		totalInterestValue = debjTotalInterestValue;
+	}
 
 	/**
 	 * 贷款利息计算
@@ -190,7 +168,7 @@
 
 <div class="flex-container">
 	<div>
-		<input name="P" type="number" id="P" min="1" max="999" placeholder="本金(万元)" />
+		<input name="P" type="number" bind:value={pValue} min="1" max="999" placeholder="本金(万元)" />
 	</div>
 	<div>
 		<select name="years-select" bind:value={selectedYear} onchange={yearsSelectChange}>
@@ -204,66 +182,89 @@
 		<input
 			name="months"
 			type="number"
-			id="months"
 			min="1"
 			max="360"
 			placeholder="期数(月)"
 			disabled={monthsDisabled}
+			bind:value={monthsValue}
 		/>
 	</div>
 	<div>
 		<input
 			name="rateOfInterest"
 			type="number"
-			id="rateOfInterest"
 			min="2.75"
 			max="7"
 			step="0.1"
 			placeholder="年利率(%)"
+			bind:value={rateOfInterestValue}
 		/>
 	</div>
 </div>
 <div>
-	<button id="calculate" class="concrete-button" onclick={calculateLoanResult}>计算</button>
+	<button class="concrete-button" onclick={calculateLoanResult}>计算</button>
 </div>
 
-<!-- <p> -->
-总利息：
-<div id="totalInterest"></div>
-<!-- </p> -->
+<div>总利息：{totalInterestValue}</div>
 
 <div class="button-area">
-	<button id="debxLabel" class="concrete-button" onclick={debxLabelClick}>等额本息</button>
-	<button id="debjLabel" class="concrete-button" onclick={debjLabelClick}>等额本金</button>
+	<button class="concrete-button" onclick={debxLabelClick}>等额本息</button>
+	<button class="concrete-button" onclick={debjLabelClick}>等额本金</button>
 </div>
 
-<div id="debxBlock" class="areaDisplay">
-	<table id="debxTable">
-		<thead>
-			<tr>
-				<th>期数</th>
-				<th>月还款额</th>
-				<th>每月本金</th>
-				<th>每月利息</th>
-				<th>剩余本金</th>
-			</tr>
-		</thead>
-	</table>
-</div>
+{#if debxBlockDisplay}
+	<div>
+		<table>
+			<thead>
+				<tr>
+					<th>期数</th>
+					<th>月还款额</th>
+					<th>每月本金</th>
+					<th>每月利息</th>
+					<th>剩余本金</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each debxDetails as item}
+					<tr>
+						<td>{item.n}</td>
+						<td>{item.monthTotal}</td>
+						<td>{item.monthMoney}</td>
+						<td>{item.monthInterest}</td>
+						<td>{item.restMoney}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/if}
 
-<div id="debjBlock" class="areaHide">
-	<table id="debjTable">
-		<thead>
-			<tr>
-				<th>期数</th>
-				<th>月还款额</th>
-				<th>每月本金</th>
-				<th>每月利息</th>
-				<th>剩余本金</th>
-			</tr>
-		</thead>
-	</table>
-</div>
+{#if debjBlockDisplay}
+	<div>
+		<table>
+			<thead>
+				<tr>
+					<th>期数</th>
+					<th>月还款额</th>
+					<th>每月本金</th>
+					<th>每月利息</th>
+					<th>剩余本金</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each debjDetails as item}
+					<tr>
+						<td>{item.n}</td>
+						<td>{item.monthTotal}</td>
+						<td>{item.monthMoney}</td>
+						<td>{item.monthInterest}</td>
+						<td>{item.restMoney}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/if}
 
 <style>
 	:global(body) {
@@ -286,14 +287,6 @@
 	table {
 		border: 1px solid #f5f5f7;
 		margin-top: 12px;
-	}
-
-	.areaDisplay {
-		display: block;
-	}
-
-	.areaHide {
-		display: none;
 	}
 
 	.button-area {
