@@ -69,7 +69,7 @@
 		{ id: 29, label: '29' },
 		{ id: 30, label: '30' }
 	];
-	let selectedYear: number | undefined = $state();
+	let selectedYear: number | undefined = $state(30);
 
 	let debxTotalInterestValue: string = $state('');
 	let debjTotalInterestValue: string = $state('');
@@ -90,32 +90,11 @@
 		debxDetails = debx.details;
 	}
 
-	/**
-	 * 构造表格行Html
-	 * @param {Object} details 详情
-	 * @returns 表格行Html
-	 */
-	function getTrHtml(details: Item[]): string {
-		return details
-			.map(
-				(item) =>
-					`<tr>
-            <td>${item.n}</td>
-            <td>${item.monthTotal}</td>
-            <td>${item.monthMoney}</td>
-            <td>${item.monthInterest}</td>
-            <td>${item.restMoney}</td>
-            </tr>`
-			)
-			.join('');
-	}
-
 	let monthsDisabled = $state(false);
 	/**
 	 * 年限下拉框更改事件
 	 */
 	const yearsSelectChange = () => {
-		console.log(selectedYear);
 		if (selectedYear === 0) {
 			monthsDisabled = false;
 			monthsValue = 0;
